@@ -57,12 +57,12 @@ export function Button({
   );
 
   if (Tag === "a" && href) {
+    const isExternal = href.startsWith("http");
     return (
       <a
         href={href}
         className={classes}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       >
         {children}
       </a>

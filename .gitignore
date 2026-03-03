@@ -30,8 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — NEVER commit these, they contain secrets
+.env
+.env.*
+.env.local
+.env.production
 
 # vercel
 .vercel
@@ -40,7 +43,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/app/generated/prisma
-
-.env
+# misc local
 docker-compose.yml
