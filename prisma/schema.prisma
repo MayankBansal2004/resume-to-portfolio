@@ -38,6 +38,8 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  resumes    Resume[]
+  portfolios Portfolio[]
 }
 
 // ── Account ────────────────────────────────────────────
@@ -88,4 +90,36 @@ model VerificationToken {
   metadata Json?
 
   @@unique([identifier, token])
+}
+
+// ── Resume ────────────────────────────────────────────
+model Resume {
+  id          String   @id @default(cuid())
+  userId      String
+  filename    String
+  filePath    String
+  rawText     String   @db.Text
+  parsedData  Json?
+  createdAt   DateTime @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolio   Portfolio?
+}
+
+// ── Portfolio ─────────────────────────────────────────
+model Portfolio {
+  id          String   @id @default(cuid())
+  userId      String
+  resumeId    String   @unique
+  slug        String
+  title       String
+  headline    String?
+  theme       String   @default("modern")
+  sections    Json
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume      Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
 }

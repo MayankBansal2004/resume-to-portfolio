@@ -4,22 +4,71 @@ import { UploadIcon } from "@/components/icons/Icons";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 const TAGS = ["🔒 100% Private", "⚡ 30-sec generation", "🌍 Instant publish"];
 
 export function UploadZone() {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [status, setStatus] = useState<"idle" | "uploading" | "generating">("idle");
+  const [error, setError] = useState<string | null>(null);
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const handleFile = (f: File | undefined) => {
-    if (f) setFile(f);
+    if (f) {
+      setFile(f);
+      setError(null);
+    }
   };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     handleFile(e.dataTransfer.files[0]);
+  };
+
+  const handleGenerate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!file) return;
+
+    try {
+      setStatus("uploading");
+      setError(null);
+
+      // 1. Upload Resume
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/resume/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error || "Failed to upload resume");
+
+      // 2. Generate Portfolio via Gemini
+      setStatus("generating");
+      const generateRes = await fetch("/api/portfolio/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resumeId: uploadData.resumeId }),
+      });
+
+      const generateData = await generateRes.json();
+      if (!generateRes.ok) throw new Error(generateData.error || "Failed to generate portfolio");
+
+      // 3. Redirect to the newly generated portfolio
+      router.push(`/portfolio/${generateData.slug}/${generateData.portfolioId}`);
+
+    } catch (err) {
+      console.error("Generation flow error:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      setStatus("idle");
+    }
   };
 
   return (
@@ -41,8 +90,12 @@ export function UploadZone() {
           "hover:shadow-[0_0_50px_rgba(99,102,241,0.15),inset_0_0_50px_rgba(99,102,241,0.04)]",
           isDragging && "scale-[1.01] border-indigo-400 bg-indigo-500/8"
         )}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+        onClick={() => {
+          if (status === "idle") inputRef.current?.click();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && status === "idle") inputRef.current?.click();
+        }}
         onDrop={onDrop}
         onDragOver={(e) => {
           e.preventDefault();
@@ -60,9 +113,18 @@ export function UploadZone() {
         />
 
         {/* Upload icon — lucide */}
-        <div className="animate-float flex h-20 w-20 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/15 text-indigo-400">
+        <div className={cn(
+          "flex h-20 w-20 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/15 text-indigo-400 transition-all",
+          status === "idle" ? "animate-float" : "animate-pulse"
+        )}>
           <UploadIcon size={40} strokeWidth={1.5} />
         </div>
+
+        {error && (
+          <div className="absolute top-4 bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-2 rounded-lg text-sm font-medium">
+            {error}
+          </div>
+        )}
 
         {file ? (
           <>
@@ -71,19 +133,21 @@ export function UploadZone() {
                 {file.name}
               </p>
               <p className="mt-1 text-sm text-emerald-400">
-                ✓ Ready to generate your portfolio
+                {status === "idle" ? "✓ Ready to generate your portfolio" : "Processing your file..."}
               </p>
             </div>
+
             <Button
               id="generate-portfolio-btn"
               variant="primary"
               size="lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                alert("Portfolio generation coming soon! 🎉");
-              }}
+              disabled={status !== "idle"}
+              onClick={handleGenerate}
+              className="mt-2"
             >
-              ⚡ Generate Portfolio
+              {status === "uploading" && "☁️ Uploading..."}
+              {status === "generating" && "🤖 AI is generating..."}
+              {status === "idle" && "⚡ Generate Portfolio"}
             </Button>
           </>
         ) : (

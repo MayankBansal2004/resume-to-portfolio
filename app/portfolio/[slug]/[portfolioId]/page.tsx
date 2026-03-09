@@ -1,0 +1,49 @@
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import type { PortfolioSections } from "@/types/portfolio";
+import { PortfolioRenderer } from "@/components/portfolio/PortfolioRenderer";
+
+interface PageProps {
+    params: Promise<{ slug: string; portfolioId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps) {
+    const { portfolioId } = await params;
+    const portfolio = await prisma.portfolio.findUnique({ where: { id: portfolioId } });
+    if (!portfolio) return {};
+    return {
+        title: `${portfolio.title} — Portfolio`,
+        description: portfolio.headline || `${portfolio.title}'s professional portfolio`,
+    };
+}
+
+export default async function PortfolioPage({ params }: PageProps) {
+    const { slug, portfolioId } = await params;
+
+    const [portfolio, session] = await Promise.all([
+        prisma.portfolio.findUnique({
+            where: { id: portfolioId },
+            include: { user: true },
+        }),
+        auth(),
+    ]);
+
+    if (!portfolio || portfolio.slug !== slug) notFound();
+    if (!portfolio.isPublished) redirect("/");
+
+    const sections = portfolio.sections as unknown as PortfolioSections;
+    const isOwner = session?.user?.id === portfolio.userId;
+
+    return (
+        <PortfolioRenderer
+            themeId={portfolio.theme}
+            portfolioId={portfolioId}
+            title={portfolio.title}
+            headline={portfolio.headline}
+            avatar={portfolio.user?.image ?? null}
+            sections={sections}
+            isOwner={isOwner}
+        />
+    );
+}
