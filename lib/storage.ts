@@ -1,40 +1,65 @@
-import fs from "fs/promises";
-import path from "path";
+import { put, del } from "@vercel/blob";
 import crypto from "crypto";
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+import path from "path";
 
 /**
- * Saves a file locally and returns the relative file path.
- * In the future, this can be swapped to Supabase Storage, Cloudflare R2, or AWS S3.
+ * Uploads a file to Vercel Blob and returns the public URL.
+ *
+ * The returned URL is what gets stored in `Resume.filePath` in the database.
+ * This replaces the previous local-filesystem approach (saves to uploads/ folder),
+ * making uploads durable across deployments and serverless restarts.
+ *
+ * Requires the BLOB_READ_WRITE_TOKEN environment variable (set on Vercel dashboard).
  */
 export async function saveFile(buffer: Buffer, originalFilename: string): Promise<string> {
-    // Ensure the uploads directory exists
-    try {
-        await fs.access(UPLOAD_DIR);
-    } catch {
-        await fs.mkdir(UPLOAD_DIR, { recursive: true });
-    }
-
-    // Generate a unique filename to prevent collisions
     const ext = path.extname(originalFilename);
     const hash = crypto.randomBytes(16).toString("hex");
-    const filename = `${hash}${ext}`;
-    const filePath = path.join(UPLOAD_DIR, filename);
+    const blobFilename = `resumes/${hash}${ext}`;
 
-    // Save the file
-    await fs.writeFile(filePath, buffer);
+    const blob = await put(blobFilename, buffer, {
+        access: "public",         // URL is publicly readable so resumes can be shared
+        contentType: getMimeType(ext),
+        addRandomSuffix: false,   // We already add our own hash for uniqueness
+    });
 
-    // Return a relative path that we can store in the database
-    // For local storage, we just store the filename/relative path
-    return `uploads/${filename}`;
+    // blob.url is the permanent Vercel Blob CDN URL — safe to store in DB
+    return blob.url;
 }
 
 /**
- * Reads a file from storage.
- * Will be updated alongside saveFile when moving to cloud storage.
+ * Fetches a file from Vercel Blob by URL and returns its content as a Buffer.
+ *
+ * Used when you need to re-process or re-download the resume file.
  */
-export async function getFile(filePath: string): Promise<Buffer> {
-    const fullPath = path.join(process.cwd(), filePath);
-    return await fs.readFile(fullPath);
+export async function getFile(fileUrl: string): Promise<Buffer> {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch file from Blob storage: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+}
+
+/**
+ * Deletes a file from Vercel Blob by URL.
+ *
+ * Call this when a Resume record is deleted to avoid orphaned blobs.
+ */
+export async function deleteFile(fileUrl: string): Promise<void> {
+    await del(fileUrl);
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function getMimeType(ext: string): string {
+    switch (ext.toLowerCase()) {
+        case ".pdf":
+            return "application/pdf";
+        case ".docx":
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        case ".doc":
+            return "application/msword";
+        default:
+            return "application/octet-stream";
+    }
 }

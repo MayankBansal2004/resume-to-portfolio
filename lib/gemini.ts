@@ -4,9 +4,10 @@ import { PortfolioSections } from "../types/portfolio";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function parseResume(rawText: string): Promise<PortfolioSections> {
-  // gemini-1.5-flash is extremely fast, free, and supports json parsing.
+  // Use a stable, specific model endpoint rather than "latest" aliases to avoid 503s.
+  // Using gemini-2.5-flash as it is fast, supports JSON mapping, and is available for this account.
   const model = genAI.getGenerativeModel({
-    model: "gemini-flash-latest",
+    model: "gemini-2.5-flash",
     systemInstruction: `You are an expert resume parser and portfolio generator.
 Extract information from the provided resume text and map it to the following JSON structure exactly.
 Rules:
