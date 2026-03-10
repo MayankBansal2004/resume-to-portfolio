@@ -23,7 +23,7 @@ export async function togglePublishPortfolio(portfolioId: string, isPublished: b
         data: { isPublished },
     });
 
-    revalidatePath("/dashboard");
+    revalidatePath("/");
     return { success: true };
 }
 
@@ -52,6 +52,35 @@ export async function deletePortfolio(portfolioId: string) {
         });
     }
 
-    revalidatePath("/dashboard");
+    revalidatePath("/");
+    return { success: true };
+}
+
+export async function generatePublicLink(portfolioId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    // Generate a simple 8-character unique alphanumeric ID
+    const publicId = Math.random().toString(36).substring(2, 10);
+
+    const updated = await prisma.portfolio.update({
+        where: { id: portfolioId, userId: session.user.id },
+        data: { publicId },
+    });
+
+    revalidatePath("/", "layout");
+    return { publicId: updated.publicId };
+}
+
+export async function removePublicLink(portfolioId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    await prisma.portfolio.update({
+        where: { id: portfolioId, userId: session.user.id },
+        data: { publicId: null },
+    });
+
+    revalidatePath("/", "layout");
     return { success: true };
 }

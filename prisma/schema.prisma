@@ -118,6 +118,7 @@ model Portfolio {
   theme       String   @default("modern")
   sections    Json
   isPublished Boolean  @default(false)
+  publicId    String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

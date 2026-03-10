@@ -48,7 +48,7 @@ export default function SignInPage() {
                     {/* Google OAuth Button */}
                     <button
                         id="google-signin-btn"
-                        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+                        onClick={() => signIn("google", { callbackUrl: "/" })}
                         className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-xl border border-slate-700 bg-slate-800/60 text-slate-200 font-medium text-sm hover:bg-slate-800 hover:border-indigo-500/40 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all duration-300"
                     >
                         {/* Google "G" logo */}

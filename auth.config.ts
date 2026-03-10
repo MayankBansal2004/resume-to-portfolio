@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/portfolio", "/settings", "/onboarding"];
+const PROTECTED_PREFIXES = ["/settings", "/onboarding"];
 const AUTH_ROUTES = ["/auth/signin"];
 
 /**
@@ -33,9 +33,9 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user;
             const path = nextUrl.pathname;
 
-            // Logged-in user hitting sign-in → send to dashboard
+            // Logged-in user hitting sign-in → send to home
             if (isLoggedIn && AUTH_ROUTES.some((r) => path.startsWith(r))) {
-                return Response.redirect(new URL("/dashboard", nextUrl));
+                return Response.redirect(new URL("/", nextUrl));
             }
 
             // Unauthed user hitting protected route → send to sign-in

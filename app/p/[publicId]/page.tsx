@@ -5,40 +5,41 @@ import type { PortfolioSections } from "@/types/portfolio";
 import { PortfolioRenderer } from "@/components/portfolio/PortfolioRenderer";
 
 interface PageProps {
-    params: Promise<{ slug: string; portfolioId: string }>;
+    params: Promise<{ publicId: string }>;
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-    const { portfolioId } = await params;
-    const portfolio = await prisma.portfolio.findUnique({ where: { id: portfolioId } });
-    if (!portfolio) return {};
+    const { publicId } = await params;
+    const portfolio = await prisma.portfolio.findUnique({ where: { publicId } });
+    if (!portfolio || !portfolio.isPublished) return {};
     return {
         title: `${portfolio.title} — Portfolio`,
         description: portfolio.headline || `${portfolio.title}'s professional portfolio`,
     };
 }
 
-export default async function PortfolioPage({ params, searchParams }: PageProps) {
-    const { slug, portfolioId } = await params;
+export default async function PublicPortfolioPage({ params, searchParams }: PageProps) {
+    const { publicId } = await params;
     const resolvedSearchParams = await searchParams;
 
+    // Use Prisma to find by publicId
     const [portfolio, session] = await Promise.all([
         prisma.portfolio.findUnique({
-            where: { id: portfolioId },
+            where: { publicId },
             include: { user: true },
         }),
         auth(),
     ]);
 
-    if (!portfolio || portfolio.slug !== slug) notFound();
-
-    const isOwner = session?.user?.id === portfolio.userId;
-
-    // Redirect non-owners if the portfolio is not published
-    if (!portfolio.isPublished && !isOwner) redirect("/");
+    // If portfolio doesn't exist or isn't published, throw 404
+    if (!portfolio || !portfolio.isPublished) notFound();
 
     const sections = portfolio.sections as unknown as PortfolioSections;
+
+    // the owner can still view their public link and change their own theme
+    const isOwner = session?.user?.id === portfolio.userId;
+
     const themeToUse = (typeof resolvedSearchParams?.theme === 'string')
         ? resolvedSearchParams.theme
         : portfolio.theme;
@@ -46,7 +47,7 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
     return (
         <PortfolioRenderer
             themeId={themeToUse}
-            portfolioId={portfolioId}
+            portfolioId={portfolio.id}
             publicId={portfolio.publicId ?? null}
             title={portfolio.title}
             headline={portfolio.headline}
