@@ -80,12 +80,12 @@ export function NavbarUserMenu({ name, email, image }: NavbarUserMenuProps) {
                     {/* Menu items */}
                     <div className="p-1.5">
                         <a
-                            href="/settings"
+                            href="/dashboard"
                             onClick={() => setOpen(false)}
                             className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 transition-colors duration-150 hover:bg-indigo-500/10 hover:text-slate-100"
                         >
-                            <Settings size={15} className="text-slate-400" />
-                            Settings
+                            <LayoutDashboard size={15} className="text-slate-400" />
+                            Dashboard
                         </a>
 
                         {/* Divider */}

@@ -48,7 +48,7 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
             themeId={themeToUse}
             portfolioId={portfolioId}
             publicId={portfolio.publicId ?? null}
-            title={portfolio.title}
+            title={sections.name || portfolio.title}
             headline={portfolio.headline}
             avatar={portfolio.user?.image ?? null}
             sections={sections}

@@ -18,6 +18,7 @@ Rules:
 
 Expected JSON Structure:
 {
+  "name": "Full Name from the resume",
   "summary": "A 2-3 sentence professional summary highlighting key skills and experience.",
   "experience": [
     {

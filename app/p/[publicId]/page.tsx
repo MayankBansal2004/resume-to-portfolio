@@ -49,7 +49,7 @@ export default async function PublicPortfolioPage({ params, searchParams }: Page
             themeId={themeToUse}
             portfolioId={portfolio.id}
             publicId={portfolio.publicId ?? null}
-            title={portfolio.title}
+            title={sections.name || portfolio.title}
             headline={portfolio.headline}
             avatar={portfolio.user?.image ?? null}
             sections={sections}

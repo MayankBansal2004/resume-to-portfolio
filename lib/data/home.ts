@@ -114,6 +114,6 @@ export const TESTIMONIALS = [
 export const NAV_LINKS = [
   "Features",
   "How it works",
-  "Pricing",
+  "Dashboard",
   "Showcase",
 ] as const;

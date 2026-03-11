@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/Button";
 import { Zap } from "lucide-react";
 import { auth } from "@/auth";
 import { NavbarUserMenu } from "./NavbarUserMenu";
+import { NavLinks } from "./NavLinks";
 
 export async function Navbar() {
   const session = await auth();
@@ -23,18 +24,8 @@ export async function Navbar() {
         </span>
       </a>
 
-      {/* Nav links */}
-      <div className="hidden items-center gap-8 md:flex">
-        {NAV_LINKS.map((item) => (
-          <a
-            key={item}
-            href={`#${item.toLowerCase().replace(/ /g, "-")}`}
-            className="text-sm text-slate-400 transition-colors duration-200 hover:text-slate-100"
-          >
-            {item}
-          </a>
-        ))}
-      </div>
+      {/* Nav links — client component so active state works with pathname */}
+      <NavLinks />
 
       {/* Actions */}
       <div className="flex items-center gap-3">

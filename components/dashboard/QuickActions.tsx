@@ -9,22 +9,6 @@ const ACTIONS = [
         desc: "Generate a new portfolio",
         href: "/#upload-zone",
     },
-    {
-        icon: Zap,
-        color: "#8b5cf6",
-        colorRgb: "139,92,246",
-        title: "View Templates",
-        desc: "Browse design styles",
-        href: "/templates",
-    },
-    {
-        icon: Star,
-        color: "#f59e0b",
-        colorRgb: "245,158,11",
-        title: "Upgrade Plan",
-        desc: "Unlock unlimited portfolios",
-        href: "/pricing",
-    },
 ];
 
 export function QuickActions() {

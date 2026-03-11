@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Determine names
-        const name = session.user.name || "My Portfolio";
+        const name = parsedData.name || session.user.name || "My Portfolio";
         const slugBase = slugify(name, { lower: true, strict: true }) || "portfolio";
 
         // Find best headline

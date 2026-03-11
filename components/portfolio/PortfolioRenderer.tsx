@@ -34,7 +34,7 @@ export function PortfolioRenderer({
     return (
         <Layout>
             {/* Home Navigation — Top Left */}
-            <div className="fixed top-5 left-5 z-50">
+            <div className="fixed top-5 left-5 z-50 flex gap-2">
                 <Link
                     href="/"
                     className="flex h-10 w-10 sm:h-10 sm:w-auto items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/80 backdrop-blur-md sm:px-4 text-sm font-medium text-zinc-100 shadow-[0_4px_24px_rgba(0,0,0,0.35)] transition-all hover:bg-zinc-800 active:scale-95"
@@ -42,6 +42,15 @@ export function PortfolioRenderer({
                     <Home size={16} />
                     <span className="hidden sm:inline">Home</span>
                 </Link>
+                {isOwner && (
+                    <Link
+                        href="/dashboard"
+                        className="flex h-10 w-10 sm:h-10 sm:w-auto items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/80 backdrop-blur-md sm:px-4 text-sm font-medium text-indigo-300 shadow-[0_4px_24px_rgba(0,0,0,0.35)] transition-all hover:bg-zinc-700 active:scale-95"
+                    >
+                        <span className="hidden sm:inline">Dashboard</span>
+                        <span className="sm:hidden">D</span>
+                    </Link>
+                )}
             </div>
 
             {/* Theme switcher — visible to everyone so they can preview themes */}

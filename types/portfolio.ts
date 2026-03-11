@@ -31,6 +31,7 @@ export const ContactSchema = z.object({
 });
 
 export const PortfolioSchema = z.object({
+    name: z.string().optional(),
     summary: z.string(),
     experience: z.array(ExperienceSchema),
     education: z.array(EducationSchema),
