@@ -11,6 +11,7 @@ interface ThemeSwitcherProps {
     publicId: string | null;
     currentThemeId: string;
     isOwner?: boolean;
+    previewActive?: boolean;
 }
 
 async function saveTheme(portfolioId: string, themeId: string) {
@@ -23,7 +24,7 @@ async function saveTheme(portfolioId: string, themeId: string) {
     window.location.reload();
 }
 
-export function ThemeSwitcher({ portfolioId, publicId, currentThemeId, isOwner = false }: ThemeSwitcherProps) {
+export function ThemeSwitcher({ portfolioId, publicId, currentThemeId, isOwner = false, previewActive = false }: ThemeSwitcherProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -93,7 +94,10 @@ export function ThemeSwitcher({ portfolioId, publicId, currentThemeId, isOwner =
             )}
 
             {/* Switcher & Actions */}
-            <div className="fixed top-5 right-5 z-[70] flex items-center gap-3">
+            <div 
+                className="fixed top-5 z-[70] flex items-center gap-3 transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                style={{ right: previewActive ? "calc(50vw + 1.25rem)" : "1.25rem" }}
+            >
                 {/* Share Button */}
                 {isOwner && (
                     !publicId ? (

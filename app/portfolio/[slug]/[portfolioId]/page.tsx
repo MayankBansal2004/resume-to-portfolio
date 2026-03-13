@@ -66,7 +66,7 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
             isOwner={isOwner}
             showAtsInsights={isOwner}
             atsInsights={isOwner ? atsInsights : null}
-            resumeDocument={isOwner ? {
+            resumeDocument={portfolio.resume ? {
                 fileUrl: portfolio.resume.filePath,
                 filename: portfolio.resume.filename,
             } : null}

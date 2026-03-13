@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import type { AtsInsights, PortfolioSections } from "@/types/portfolio";
 import { getTheme } from "@/themes";
 import { ThemeSwitcher } from "@/components/portfolio/ThemeSwitcher";
+import { RecruiterView } from "@/components/portfolio/RecruiterView";
 import Link from "next/link";
 import { ExternalLink, FileText, Home, Sparkles, TrendingUp, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface PortfolioRendererProps {
     themeId: string;
@@ -49,7 +51,7 @@ const ownerPanelStyles: Record<string, { border: string; glow: string; badge: st
 
 function getPreviewUrl(fileUrl: string, filename: string) {
     const ext = filename.split(".").pop()?.toLowerCase();
-    if (ext === "pdf") return fileUrl;
+    if (ext === "pdf") return `${fileUrl}#navpanes=0&view=FitH`;
     if (ext === "doc" || ext === "docx") {
         return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
     }
@@ -81,9 +83,23 @@ export function PortfolioRenderer({
         return getPreviewUrl(resumeDocument.fileUrl, resumeDocument.filename);
     }, [resumeDocument]);
 
+    // Framer motion variants for the drawer
+    const drawerVariants = {
+        hidden: { x: "100%", opacity: 0.5 },
+        visible: { x: 0, opacity: 1, transition: { type: "spring", damping: 30, stiffness: 300 } },
+        exit: { x: "100%", opacity: 0.5, transition: { type: "spring", damping: 30, stiffness: 300 } }
+    };
+
     return (
         <Layout>
-            {/* Home Navigation — Top Left */}
+            {/* Drawer with scale down effect on main layout */}
+            <div 
+                className="transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] origin-left min-h-screen"
+                style={{ 
+                    width: showPreview ? "50vw" : "100%",
+                }}
+            >
+                {/* Home Navigation — Top Left */}
             <div className="fixed top-5 left-5 z-50 flex gap-2">
                 <Link
                     href="/"
@@ -104,10 +120,13 @@ export function PortfolioRenderer({
             </div>
 
             {/* Theme switcher — visible to everyone so they can preview themes */}
-            <ThemeSwitcher portfolioId={portfolioId} publicId={publicId} currentThemeId={theme.id} isOwner={isOwner} />
+            <ThemeSwitcher portfolioId={portfolioId} publicId={publicId} currentThemeId={theme.id} isOwner={isOwner} previewActive={showPreview} />
 
             {showAtsInsights && atsInsights && showInsights && (
-                <div className={`fixed right-4 top-20 z-50 w-[min(92vw,380px)] rounded-2xl border bg-zinc-900/80 p-4 text-zinc-100 backdrop-blur-xl ${panelStyle.border} ${panelStyle.glow}`}>
+                <div 
+                    className={`fixed top-20 z-50 w-[min(92vw,380px)] rounded-2xl border bg-zinc-900/80 p-4 text-zinc-100 backdrop-blur-xl transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelStyle.border} ${panelStyle.glow}`}
+                    style={{ right: showPreview ? "calc(50vw + 1rem)" : "1rem" }}
+                >
                     <div className="mb-3 flex items-start justify-between gap-3">
                         <div>
                             <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">Owner Insights</p>
@@ -150,7 +169,8 @@ export function PortfolioRenderer({
             {showAtsInsights && !showInsights && atsInsights && (
                 <button
                     onClick={() => setShowInsights(true)}
-                    className={`fixed right-4 top-20 z-50 inline-flex items-center gap-2 rounded-full border bg-zinc-900/80 px-3 py-2 text-xs font-medium text-zinc-100 backdrop-blur-xl ${panelStyle.border}`}
+                    className={`fixed top-20 z-50 inline-flex items-center gap-2 rounded-full border bg-zinc-900/80 px-3 py-2 text-xs font-medium text-zinc-100 backdrop-blur-xl transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] ${panelStyle.border}`}
+                    style={{ right: showPreview ? "calc(50vw + 1rem)" : "1rem" }}
                 >
                     <Sparkles size={13} /> Show ATS insights
                 </button>
@@ -159,12 +179,15 @@ export function PortfolioRenderer({
             {resumeDocument && (
                 <button
                     onClick={() => setShowPreview(true)}
-                    className={`fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full border bg-zinc-900/85 px-4 py-2.5 text-sm font-medium text-zinc-100 backdrop-blur-xl transition hover:bg-zinc-800/90 ${panelStyle.border}`}
+                    className={`fixed bottom-5 z-50 inline-flex items-center gap-2 rounded-full border bg-zinc-900/85 px-4 py-2.5 text-sm font-medium text-zinc-100 backdrop-blur-xl transition-all duration-400 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-zinc-800/90 ${panelStyle.border} ${showPreview ? 'hidden' : ''}`}
+                    style={{ right: "1.25rem" }}
                 >
                     <FileText size={15} />
                     Preview raw resume
                 </button>
             )}
+
+            {publicId && <RecruiterView publicId={publicId} themeId={theme.id} previewActive={showPreview} />}
 
             <Hero
                 name={title}
@@ -196,55 +219,79 @@ export function PortfolioRenderer({
             {/* Powered-by footer */}
             <footer className="border-t border-current/10 px-6 py-8 text-center text-xs opacity-40">
                 Built with{" "}
-                <a href="/" className="underline hover:opacity-80">
+                <Link href="/" className="underline hover:opacity-80">
                     Resume-to-Portfolio
-                </a>{" "}
+                </Link>{" "}
                 · Turn your résumé into a portfolio in 30 seconds
             </footer>
+            </div>
 
-            {showPreview && resumeDocument && (
-                <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-                    <div className="relative flex h-[88vh] w-[min(1100px,96vw)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-zinc-950">
-                        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                            <p className="truncate text-sm font-medium text-zinc-100">{resumeDocument.filename}</p>
-                            <div className="flex items-center gap-2">
-                                <a
-                                    href={resumeDocument.fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2.5 py-1.5 text-xs text-zinc-200 hover:bg-white/10"
-                                >
-                                    Open <ExternalLink size={12} />
-                                </a>
-                                <button
-                                    onClick={() => setShowPreview(false)}
-                                    className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white"
-                                    aria-label="Close resume preview"
-                                >
-                                    <X size={15} />
-                                </button>
+            <AnimatePresence>
+                {showPreview && resumeDocument && (
+                    <div className="fixed inset-0 z-[100] flex justify-end pointer-events-none">
+                        <motion.div
+                            variants={drawerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            className={`relative z-10 flex h-full w-[50vw] flex-col border-l bg-zinc-950 shadow-[-20px_0_80px_rgba(0,0,0,0.5)] pointer-events-auto ${panelStyle.border}`}
+                        >
+                            <div className={`flex items-center justify-between border-b px-6 py-4 bg-white/5 ${panelStyle.border}`}>
+                                <div>
+                                    <p className="text-[11px] uppercase tracking-[0.15em] text-zinc-400">Raw Document</p>
+                                    <h3 className="mt-1 truncate text-sm font-semibold text-white max-w-[300px] sm:max-w-md">{resumeDocument.filename}</h3>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <a
+                                        href={resumeDocument.fileUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:bg-white/10 hover:text-white"
+                                    >
+                                        Open New Tab <ExternalLink size={14} />
+                                    </a>
+                                    <button
+                                        onClick={() => setShowPreview(false)}
+                                        className="rounded-full bg-black/20 p-2 text-zinc-400 transition hover:bg-white/10 hover:text-white"
+                                        aria-label="Close resume preview"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        {previewUrl ? (
-                            <iframe src={previewUrl} className="h-full w-full" title="Resume preview" />
-                        ) : (
-                            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-zinc-300">
-                                <FileText size={28} />
-                                <p className="text-sm">Preview is not supported for this file type.</p>
-                                <a
-                                    href={resumeDocument.fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="rounded-lg border border-white/20 px-3 py-2 text-sm hover:bg-white/10"
-                                >
-                                    Open raw resume
-                                </a>
+                            <div className="flex-1 overflow-hidden bg-black/20">
+                                {previewUrl ? (
+                                    <object 
+                                        data={previewUrl} 
+                                        type="application/pdf" 
+                                        className="h-full w-full rounded-b-none border-none bg-white"
+                                        aria-label="Resume preview"
+                                    >
+                                        <embed src={previewUrl} type="application/pdf" className="h-full w-full rounded-b-none border-none bg-white" />
+                                    </object>
+                                ) : (
+                                    <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center text-zinc-300">
+                                        <div className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 border ${panelStyle.border}`}>
+                                            <FileText size={32} className="opacity-80" />
+                                        </div>
+                                        <p className="text-sm font-medium">Preview is not directly supported for this file type.</p>
+                                        <p className="max-w-xs text-xs text-zinc-500">You can still download or open the original raw file directly.</p>
+                                        <a
+                                            href={resumeDocument.fileUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="mt-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/20"
+                                        >
+                                            Open raw resume
+                                        </a>
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </Layout>
     );
 }
