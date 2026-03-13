@@ -7,9 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const userId = session?.user?.id || null;
 
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
@@ -33,7 +31,7 @@ export async function POST(req: NextRequest) {
         // 3. Save to database
         const resume = await prisma.resume.create({
             data: {
-                userId: session.user.id,
+                userId,
                 filename: file.name,
                 filePath,
                 rawText,

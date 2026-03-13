@@ -86,8 +86,8 @@ export function PortfolioRenderer({
     // Framer motion variants for the drawer
     const drawerVariants = {
         hidden: { x: "100%", opacity: 0.5 },
-        visible: { x: 0, opacity: 1, transition: { type: "spring", damping: 30, stiffness: 300 } },
-        exit: { x: "100%", opacity: 0.5, transition: { type: "spring", damping: 30, stiffness: 300 } }
+        visible: { x: 0, opacity: 1, transition: { type: "spring" as const, damping: 30, stiffness: 300 } },
+        exit: { x: "100%", opacity: 0.5, transition: { type: "spring" as const, damping: 30, stiffness: 300 } }
     };
 
     return (

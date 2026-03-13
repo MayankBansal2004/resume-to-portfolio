@@ -3,14 +3,13 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResume } from "@/lib/gemini";
 import { buildAtsInsights } from "@/lib/ats";
+import { cookies } from "next/headers";
 import slugify from "slugify";
 
 export async function POST(req: NextRequest) {
     try {
         const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const userId = session?.user?.id || null;
 
         const body = await req.json();
         const { resumeId } = body;
@@ -21,11 +20,11 @@ export async function POST(req: NextRequest) {
 
         // Fetch resume
         const resume = await prisma.resume.findUnique({
-            where: { id: resumeId, userId: session.user.id },
+            where: { id: resumeId },
         });
 
-        if (!resume) {
-            return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+        if (!resume || (resume.userId && resume.userId !== userId)) {
+            return NextResponse.json({ error: "Resume not found or unauthorized" }, { status: 404 });
         }
 
         // Ensure we haven't already generated one (1 resume = 1 portfolio for MVP)
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Determine names
-        const name = parsedData.name || session.user.name || "My Portfolio";
+        const name = parsedData.name || session?.user?.name || "My Portfolio";
         const slugBase = slugify(name, { lower: true, strict: true }) || "portfolio";
 
         // Find best headline
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
         // Create Portfolio
         const newPortfolio = await prisma.portfolio.create({
             data: {
-                userId: session.user.id,
+                userId,
                 resumeId: resume.id,
                 slug: slugBase,       // Route will be /portfolio/[slug]/[portfolioId]
                 title: name,
@@ -77,6 +76,20 @@ export async function POST(req: NextRequest) {
                 isPublished: true,    // Auto publish for MVP mapping
             },
         });
+
+        if (!userId) {
+            const cookieStore = await cookies();
+            let guestPortfolios: string[] = [];
+            try {
+                guestPortfolios = JSON.parse(cookieStore.get("guest_portfolios")?.value || "[]");
+            } catch (e) {
+                // ignore
+            }
+            if (!guestPortfolios.includes(newPortfolio.id)) {
+                guestPortfolios.push(newPortfolio.id);
+                cookieStore.set("guest_portfolios", JSON.stringify(guestPortfolios), { maxAge: 60 * 60 * 24 * 30 }); // 30 days
+            }
+        }
 
         return NextResponse.json({
             success: true,

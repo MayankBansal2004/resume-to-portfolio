@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import type { PortfolioSections } from "@/types/portfolio";
 import { PortfolioRenderer } from "@/components/portfolio/PortfolioRenderer";
 import { buildAtsInsights } from "@/lib/ats";
+import { cookies } from "next/headers";
 
 interface PageProps {
     params: Promise<{ slug: string; portfolioId: string }>;
@@ -43,7 +44,20 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
 
     if (!portfolio || portfolio.slug !== slug) notFound();
 
-    const isOwner = session?.user?.id === portfolio.userId;
+    let isOwner = false;
+    if (portfolio.userId && session?.user?.id === portfolio.userId) {
+        isOwner = true;
+    } else if (!portfolio.userId) {
+        const cookieStore = await cookies();
+        try {
+            const guestPortfolios = JSON.parse(cookieStore.get("guest_portfolios")?.value || "[]");
+            if (guestPortfolios.includes(portfolio.id)) {
+                isOwner = true;
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
 
     // Redirect non-owners if the portfolio is not published
     if (!portfolio.isPublished && !isOwner) redirect("/");

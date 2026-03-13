@@ -1,7 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 
-const PROTECTED_PREFIXES = ["/settings", "/onboarding"];
+const PROTECTED_PREFIXES = ["/settings", "/onboarding", "/dashboard"];
 const AUTH_ROUTES = ["/auth/signin"];
 
 /**

@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
 export async function getUserPortfolios() {
     const session = await auth();
@@ -58,13 +59,36 @@ export async function deletePortfolio(portfolioId: string) {
 
 export async function generatePublicLink(portfolioId: string) {
     const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+    const userId = session?.user?.id || null;
+
+    const portfolio = await prisma.portfolio.findUnique({
+        where: { id: portfolioId }
+    });
+
+    if (!portfolio) throw new Error("Not found");
+
+    let isOwner = false;
+    if (portfolio.userId && portfolio.userId === userId) {
+        isOwner = true;
+    } else if (!portfolio.userId) {
+        const cookieStore = await cookies();
+        try {
+            const guestPortfolios = JSON.parse(cookieStore.get("guest_portfolios")?.value || "[]");
+            if (guestPortfolios.includes(portfolio.id)) {
+                isOwner = true;
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    if (!isOwner) throw new Error("Unauthorized");
 
     // Generate a simple 8-character unique alphanumeric ID
     const publicId = Math.random().toString(36).substring(2, 10);
 
     const updated = await prisma.portfolio.update({
-        where: { id: portfolioId, userId: session.user.id },
+        where: { id: portfolioId },
         data: { publicId },
     });
 
