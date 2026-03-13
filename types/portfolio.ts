@@ -30,6 +30,18 @@ export const ContactSchema = z.object({
     website: z.string().optional(),
 });
 
+export const AtsSuggestionSchema = z.object({
+    title: z.string(),
+    detail: z.string(),
+    priority: z.enum(["high", "medium", "low"]).default("medium"),
+});
+
+export const AtsInsightsSchema = z.object({
+    score: z.number().min(0).max(100),
+    summary: z.string().optional(),
+    suggestions: z.array(AtsSuggestionSchema).max(6),
+});
+
 export const PortfolioSchema = z.object({
     name: z.string().optional(),
     summary: z.string(),
@@ -38,6 +50,7 @@ export const PortfolioSchema = z.object({
     skills: z.array(z.string()),
     projects: z.array(ProjectSchema),
     contact: ContactSchema,
+    ats: AtsInsightsSchema.optional(),
 });
 
 export type PortfolioSections = z.infer<typeof PortfolioSchema>;
@@ -45,3 +58,5 @@ export type Experience = z.infer<typeof ExperienceSchema>;
 export type Education = z.infer<typeof EducationSchema>;
 export type Project = z.infer<typeof ProjectSchema>;
 export type Contact = z.infer<typeof ContactSchema>;
+export type AtsSuggestion = z.infer<typeof AtsSuggestionSchema>;
+export type AtsInsights = z.infer<typeof AtsInsightsSchema>;

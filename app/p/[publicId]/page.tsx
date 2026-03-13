@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import type { PortfolioSections } from "@/types/portfolio";
 import { PortfolioRenderer } from "@/components/portfolio/PortfolioRenderer";
+import { buildAtsInsights } from "@/lib/ats";
 
 interface PageProps {
     params: Promise<{ publicId: string }>;
@@ -27,7 +28,16 @@ export default async function PublicPortfolioPage({ params, searchParams }: Page
     const [portfolio, session] = await Promise.all([
         prisma.portfolio.findUnique({
             where: { publicId },
-            include: { user: true },
+            include: {
+                user: true,
+                resume: {
+                    select: {
+                        filePath: true,
+                        filename: true,
+                        rawText: true,
+                    }
+                }
+            },
         }),
         auth(),
     ]);
@@ -36,6 +46,7 @@ export default async function PublicPortfolioPage({ params, searchParams }: Page
     if (!portfolio || !portfolio.isPublished) notFound();
 
     const sections = portfolio.sections as unknown as PortfolioSections;
+    const atsInsights = sections.ats ?? buildAtsInsights(portfolio.resume.rawText, sections);
 
     // the owner can still view their public link and change their own theme
     const isOwner = session?.user?.id === portfolio.userId;
@@ -54,6 +65,12 @@ export default async function PublicPortfolioPage({ params, searchParams }: Page
             avatar={portfolio.user?.image ?? null}
             sections={sections}
             isOwner={isOwner}
+            showAtsInsights={false}
+            atsInsights={null}
+            resumeDocument={isOwner ? {
+                fileUrl: portfolio.resume.filePath,
+                filename: portfolio.resume.filename,
+            } : null}
         />
     );
 }

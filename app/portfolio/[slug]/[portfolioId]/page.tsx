@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import type { PortfolioSections } from "@/types/portfolio";
 import { PortfolioRenderer } from "@/components/portfolio/PortfolioRenderer";
+import { buildAtsInsights } from "@/lib/ats";
 
 interface PageProps {
     params: Promise<{ slug: string; portfolioId: string }>;
@@ -26,7 +27,16 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
     const [portfolio, session] = await Promise.all([
         prisma.portfolio.findUnique({
             where: { id: portfolioId },
-            include: { user: true },
+            include: {
+                user: true,
+                resume: {
+                    select: {
+                        filePath: true,
+                        filename: true,
+                        rawText: true,
+                    }
+                }
+            },
         }),
         auth(),
     ]);
@@ -39,6 +49,7 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
     if (!portfolio.isPublished && !isOwner) redirect("/");
 
     const sections = portfolio.sections as unknown as PortfolioSections;
+    const atsInsights = sections.ats ?? buildAtsInsights(portfolio.resume.rawText, sections);
     const themeToUse = (typeof resolvedSearchParams?.theme === 'string')
         ? resolvedSearchParams.theme
         : portfolio.theme;
@@ -53,6 +64,12 @@ export default async function PortfolioPage({ params, searchParams }: PageProps)
             avatar={portfolio.user?.image ?? null}
             sections={sections}
             isOwner={isOwner}
+            showAtsInsights={isOwner}
+            atsInsights={isOwner ? atsInsights : null}
+            resumeDocument={isOwner ? {
+                fileUrl: portfolio.resume.filePath,
+                filename: portfolio.resume.filename,
+            } : null}
         />
     );
 }

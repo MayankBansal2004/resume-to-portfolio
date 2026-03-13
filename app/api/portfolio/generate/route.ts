@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseResume } from "@/lib/gemini";
+import { buildAtsInsights } from "@/lib/ats";
 import slugify from "slugify";
 
 export async function POST(req: NextRequest) {
@@ -41,6 +42,10 @@ export async function POST(req: NextRequest) {
 
         // Call Gemini AI
         const parsedData = await parseResume(resume.rawText);
+
+        if (!parsedData.ats?.suggestions?.length) {
+            parsedData.ats = buildAtsInsights(resume.rawText, parsedData);
+        }
 
         // Save structured logic to DB
         await prisma.resume.update({

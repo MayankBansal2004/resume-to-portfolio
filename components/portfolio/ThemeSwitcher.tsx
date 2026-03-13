@@ -89,11 +89,11 @@ export function ThemeSwitcher({ portfolioId, publicId, currentThemeId, isOwner =
         <>
             {/* Backdrop */}
             {open && (
-                <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                <div className="fixed inset-0 z-[65]" onClick={() => setOpen(false)} />
             )}
 
             {/* Switcher & Actions */}
-            <div className="fixed top-5 right-5 z-50 flex items-center gap-3">
+            <div className="fixed top-5 right-5 z-[70] flex items-center gap-3">
                 {/* Share Button */}
                 {isOwner && (
                     !publicId ? (
@@ -141,7 +141,7 @@ export function ThemeSwitcher({ portfolioId, publicId, currentThemeId, isOwner =
                 {/* Dropdown panel */}
                 {open && (
                     <div
-                        className="absolute right-0 top-full mt-2 w-64 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+                        className="absolute right-0 top-full z-[70] mt-2 w-64 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
                         style={{
                             background: "rgba(15, 23, 42, 0.85)",
                             backdropFilter: "blur(24px)",
